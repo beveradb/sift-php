@@ -1,5 +1,5 @@
 {
-    "name": "siftscience/sift-php",
+    "name": "beveradb/sift-php",
     "description": "Sift Science PHP library",
     "keywords": ["sift", "sift science", "php", "fraud"],
     "homepage": "https://github.com/SiftScience/sift-php",
@@ -23,6 +23,9 @@
         },
         {
             "name": "Alex Paino"
+        },
+        {
+            "name": "Andrew Beveridge"
         }
     ],
     "support": {
