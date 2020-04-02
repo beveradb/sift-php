@@ -1,6 +1,9 @@
 <?php
 
-class SiftResponse {
+use ColinODell\Json5\SyntaxError;
+
+class SiftResponse
+{
     public $body;
     public $httpStatusCode;
     public $curlErrno;
@@ -12,7 +15,8 @@ class SiftResponse {
     public $request;
     public $rawResponse;
 
-    public function __construct($result, $httpStatusCode, $request, $curlErrno = 0, $curlError = '') {
+    public function __construct($result, $httpStatusCode, $request, $curlErrno = 0, $curlError = '')
+    {
         $this->body = null;
         $this->apiStatus = null;
         $this->apiErrorMessage = null;
@@ -26,26 +30,30 @@ class SiftResponse {
 
         // Only attempt to get our response body if the http status code expects a body
         if ($this->httpStatusCode >= 200 && !in_array($this->httpStatusCode, array(204, 304))) {
-            $this->body = json_decode($result, true);
+            try {
+                $this->body = json5_decode($result, true);
 
-            if (is_null($this->body)) {
-                $this->apiErrorMessage = 'Invalid JSON received from Sift API';
-            } elseif (is_array($this->body)) {
-                // /v3 responses use error and description
-                if (array_key_exists('error', $this->body)) {
-                    $this->apiError = $this->body['error'];
-                }
-                if (array_key_exists('description', $this->body)) {
-                    $this->apiDescription = $this->body['description'];
-                }
+                if (is_null($this->body)) {
+                    $this->apiErrorMessage = 'Invalid JSON received from Sift API: null body';
+                } elseif (is_array($this->body)) {
+                    // /v3 responses use error and description
+                    if (array_key_exists('error', $this->body)) {
+                        $this->apiError = $this->body['error'];
+                    }
+                    if (array_key_exists('description', $this->body)) {
+                        $this->apiDescription = $this->body['description'];
+                    }
 
-                // /v2xx responses use status and error_message
-                if (array_key_exists('status', $this->body)) {
-                    $this->apiStatus = intval($this->body['status']);
+                    // /v2xx responses use status and error_message
+                    if (array_key_exists('status', $this->body)) {
+                        $this->apiStatus = intval($this->body['status']);
+                    }
+                    if (array_key_exists('error_message', $this->body)) {
+                        $this->apiErrorMessage = $this->body['error_message'];
+                    }
                 }
-                if (array_key_exists('error_message', $this->body)) {
-                    $this->apiErrorMessage = $this->body['error_message'];
-                }
+            } catch (SyntaxError $e) {
+                $this->apiErrorMessage = 'Invalid JSON received from Sift API: SyntaxError caught';
             }
         }
     }
@@ -54,7 +62,7 @@ class SiftResponse {
     {
         if ($name === "originalRequest") {
             trigger_error("The member variable 'originalRequest' is deprecated.  Please use 'request' instead.\n",
-             E_USER_WARNING);
+                E_USER_WARNING);
             return $this->request;
         }
 
@@ -67,7 +75,8 @@ class SiftResponse {
         return null;
     }
 
-    public function isOk() {
+    public function isOk()
+    {
         // If there is no body, check the http status code only (should be 204)
         if (in_array($this->httpStatusCode, array(204, 304))) {
             return 204 === $this->httpStatusCode;
